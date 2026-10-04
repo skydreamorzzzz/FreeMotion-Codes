@@ -1,0 +1,11 @@
+__pycache__/
+*.pyc
+data/annots/
+data/motions/
+data/motions_processed/
+data/separate_annots/
+data/split/
+data/LICENSE.md
+eval_model/
+checkpoints/
+log/

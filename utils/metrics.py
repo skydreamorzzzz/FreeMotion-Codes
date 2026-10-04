@@ -1,3 +1,4 @@
+import inspect
 import numpy as np
 from scipy import linalg
 from scipy.ndimage import uniform_filter1d
@@ -118,7 +119,11 @@ def calculate_frechet_distance(mu1, sigma1, mu2, sigma2, eps=1e-6):
     diff = mu1 - mu2
 
     # Product might be almost singular
-    covmean, _ = linalg.sqrtm(sigma1.dot(sigma2), disp=False)
+    # SciPy 1.18 removed disp and always returns the matrix square root.
+    if "disp" in inspect.signature(linalg.sqrtm).parameters:
+        covmean, _ = linalg.sqrtm(sigma1.dot(sigma2), disp=False)
+    else:
+        covmean = linalg.sqrtm(sigma1.dot(sigma2))
     if not np.isfinite(covmean).all():
         msg = ('fid calculation produces singular product; '
                'adding %s to diagonal of cov estimates') % eps

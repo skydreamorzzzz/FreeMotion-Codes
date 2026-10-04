@@ -248,7 +248,17 @@ def get_motion_loader(batch_size, model, ground_truth_dataset, device, mm_num_sa
 
 def build_models(cfg):
     model = InterCLIP(cfg)
-    checkpoint = torch.load(pjoin('eval_model/interclip.ckpt'),map_location="cpu")
+    # Official legacy checkpoint includes NumPy scalar metadata. Keep the new
+    # weights-only loader and allow only the NumPy types required by that file.
+    if hasattr(torch.serialization, "safe_globals"):
+        numpy_core = np._core if hasattr(np, "_core") else np.core
+        with torch.serialization.safe_globals([
+            (numpy_core.multiarray.scalar, "numpy.core.multiarray.scalar"),
+            np.dtype, type(np.dtype(np.float64)),
+        ]):
+            checkpoint = torch.load(pjoin('eval_model/interclip.ckpt'), map_location="cpu", weights_only=True)
+    else:
+        checkpoint = torch.load(pjoin('eval_model/interclip.ckpt'), map_location="cpu")
     
     # checkpoint = torch.load(pjoin('checkpoints/interclip/model/5.ckpt'),map_location="cpu")
     for k in list(checkpoint["state_dict"].keys()):

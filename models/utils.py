@@ -1,3 +1,4 @@
+import inspect
 import torch
 from torch import nn
 import numpy as np
@@ -7,7 +8,11 @@ class CosineWarmupScheduler(torch.optim.lr_scheduler._LRScheduler):
     def __init__(self, optimizer, warmup, max_iters, verbose=False):
         self.warmup = warmup
         self.max_num_iters = max_iters
-        super().__init__(optimizer, verbose=verbose)
+        # PyTorch 2.11 removed verbose; preserve the upstream LR schedule.
+        if "verbose" in inspect.signature(torch.optim.lr_scheduler._LRScheduler.__init__).parameters:
+            super().__init__(optimizer, verbose=verbose)
+        else:
+            super().__init__(optimizer)
 
     def get_lr(self):
         lr_factor = self.get_lr_factor(epoch=self.last_epoch)

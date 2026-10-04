@@ -153,8 +153,12 @@ if __name__ == '__main__':
     parser.add_argument('--model_config', type=str, help='model config')
     parser.add_argument('--dataset_config', type=str, help='dataset config')
     parser.add_argument('--train_config', type=str, help='train config')
+    parser.add_argument('--max_steps', type=int, default=-1, help='Optional bounded validation run; -1 keeps upstream epoch schedule')
+    parser.add_argument('--seed', type=int, default=None, help='Optional reproducibility seed')
 
     args = parser.parse_args()
+    if args.seed is not None:
+        pl.seed_everything(args.seed, workers=True)
 
     print(os.getcwd())
     model_cfg = get_config(args.model_config)
@@ -185,9 +189,10 @@ if __name__ == '__main__':
                                                        )
     trainer = pl.Trainer(
         default_root_dir=litmodel.model_dir,
-        devices="auto", accelerator='gpu',
+        devices=1 if sys.platform == "win32" else "auto", accelerator='gpu',
         max_epochs=train_cfg.TRAIN.EPOCH,
-        strategy=DDPStrategy(find_unused_parameters=True),
+        max_steps=args.max_steps,
+        strategy="auto" if sys.platform == "win32" else DDPStrategy(find_unused_parameters=True),
         precision=32,
         callbacks=[checkpoint_callback],
         detect_anomaly=True
